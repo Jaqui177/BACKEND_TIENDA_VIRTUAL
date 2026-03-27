@@ -2,6 +2,7 @@ const express = require('express');
 const logger = require('morgan');
 const bodyParser = require('body-parser');
 
+
 const http = require('http');
 const app = express();
 
@@ -12,6 +13,10 @@ app.use(bodyParser.urlencoded({extended: false}));
 app.get('/', (req, res)=> res.status(200).send({
     message: 'Bienvenido a mi api de tienda virtual',
 }));
+
+require('./routes/route_categorias')(app);
+
+
 
 const port = parseInt(process.env.PORT, 10) || 8000;
 app.set('port', port);

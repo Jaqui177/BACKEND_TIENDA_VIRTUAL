@@ -10,7 +10,7 @@ module.exports = (sequelize, DataTypes) => {
      * The `models/index` file will call this method automatically.
      */
     static associate(models) {
-      tbb_carritos.belongsTo(models.tbc_usuarios, {
+      tbb_carritos.belongsTo(models.tbc_usuario, {
         foreignKey: 'id_usuario',
         as: 'usuario'
       });
