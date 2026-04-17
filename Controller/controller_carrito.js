@@ -1,53 +1,77 @@
-const Sequelize = require('sequelize');
-const carrito = require('../models/tbb_carrito');
+const db = require('../models');
+
+const carritos = db.tbb_carritos;
 
 module.exports = {
-    create (req, res) {
-        return carrito
-        .create({
-            id_usuario: req.params.id_usuario,
-            total: req.params.total,
-            estado: req.params.estado,
-            fecha_creacion: req.params.fecha_creacion
-        })
-        .then(carrito => res.status(200).send(carrito))
-        .catch(error => res.status(400).send(error))
+    async create(req, res) {
+        try {
+            const nuevoCarrito = await carritos.create({
+                id_usuario: req.body.id_usuario,
+                total: req.body.total,
+                fecha_creacion: req.body.fecha_creacion
+            });
+
+            return res.status(201).send(nuevoCarrito);
+        } catch (error) {
+            return res.status(400).send(error);
+        }
     },
-    list (_, res) {
-        return carrito.findAll({})
-        .then(carrito => res.status(200).send(carrito))
-        .catch(error => res.status(400).send(error))
+
+    async list(_, res) {
+        try {
+            const listado = await carritos.findAll({});
+            return res.status(200).send(listado);
+        } catch (error) {
+            return res.status(400).send(error);
+        }
     },
-    find (req, res) {
-        return carrito.findAll({
-            where: {
-                id: req.params.id,
+
+    async findById(req, res) {
+        try {
+            const carrito = await carritos.findByPk(req.params.id);
+
+            if (!carrito) {
+                return res.status(404).send({ mensaje: 'Carrito no encontrado' });
             }
-        })
-        .then(carrito => res.status(200).send(carrito))
-        .catch(error => res.status(400).send(error))
+
+            return res.status(200).send(carrito);
+        } catch (error) {
+            return res.status(400).send(error);
+        }
     },
-    update (req, res) {
-        return carrito.update({
-            id_usuario: req.params.id_usuario,
-            total: req.params.total,
-            estado: req.params.estado,
-            fecha_creacion: req.params.fecha_creacion
-        }, {
-            where: {
-                id: req.params.id,
+
+    async update(req, res) {
+        try {
+            const carrito = await carritos.findByPk(req.params.id);
+
+            if (!carrito) {
+                return res.status(404).send({ mensaje: 'Carrito no encontrado' });
             }
-        })
-        .then(carrito => res.status(200).send(carrito))
-        .catch(error => res.status(400).send(error))
+
+            await carrito.update({
+                id_usuario: req.body.id_usuario,
+                total: req.body.total,
+                fecha_creacion: req.body.fecha_creacion
+            });
+
+            return res.status(200).send(carrito);
+        } catch (error) {
+            return res.status(400).send(error);
+        }
     },
-    delete (req, res) {
-        return carrito.destroy({
-            where: {
-                id: req.params.id,
+
+    async delete(req, res) {
+        try {
+            const carrito = await carritos.findByPk(req.params.id);
+
+            if (!carrito) {
+                return res.status(404).send({ mensaje: 'Carrito no encontrado' });
             }
-        })
-        .then(carrito => res.status(200).send(carrito))
-        .catch(error => res.status(400).send(error))
-    },
+
+            await carrito.destroy();
+            return res.status(200).send({ mensaje: 'Datos eliminados correctamente' });
+        } catch (error) {
+            return res.status(400).send(error);
+        }
+    }
 };

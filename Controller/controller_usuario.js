@@ -1,59 +1,85 @@
-const Sequelize = require('sequelize');
-const usuario = require('../models/tbc_usuario');
+const db = require('../models');
+
+const usuarios = db.tbc_usuario;
 
 module.exports = {
-    create (req, res) {
-        return usuario
-        .create({
-            nombre: req.params.nombre,
-            direccion: req.params.direccion,
-            telefono: req.params.telefono,
-            email: req.params.email,
-            password: req.params.password,
-            rol: req.params.rol,
-            fecha_registro: req.params.fecha_registro
-        })
-        .then(usuario => res.status(200).send(usuario))
-        .catch(error => res.status(400).send(error))
+    async create(req, res) {
+        try {
+            const nuevoUsuario = await usuarios.create({
+                nombre: req.body.nombre,
+                direccion: req.body.direccion,
+                telefono: req.body.telefono,
+                email: req.body.email,
+                password: req.body.password,
+                rol: req.body.rol,
+                fecha_registro: req.body.fecha_registro
+            });
+
+            return res.status(201).send(nuevoUsuario);
+        } catch (error) {
+            return res.status(400).send(error);
+        }
     },
-    list (_, res) {
-        return usuario.findAll({})
-        .then(usuario => res.status(200).send(usuario))
-        .catch(error => res.status(400).send(error))
+
+    async list(_, res) {
+        try {
+            const listado = await usuarios.findAll({});
+            return res.status(200).send(listado);
+        } catch (error) {
+            return res.status(400).send(error);
+        }
     },
-    find (req, res) {
-        return usuario.findAll({
-            where: {
-                nombre: req.params.nombre,
+
+    async findById(req, res) {
+        try {
+            const usuario = await usuarios.findByPk(req.params.id);
+
+            if (!usuario) {
+                return res.status(404).send({ mensaje: 'Usuario no encontrado' });
             }
-        })
-        .then(usuario => res.status(200).send(usuario))
-        .catch(error => res.status(400).send(error))
+
+            return res.status(200).send(usuario);
+        } catch (error) {
+            return res.status(400).send(error);
+        }
     },
-    update (req, res) {
-        return usuario.update({
-            nombre: req.params.nombreNuevo,
-            direccion: req.params.direccion,
-            telefono: req.params.telefono,
-            email: req.params.email,
-            password: req.params.password,
-            rol: req.params.rol,
-            fecha_registro: req.params.fecha_registro
-        }, {
-            where: {
-                nombre: req.params.nombre,
+
+    async update(req, res) {
+        try {
+            const usuario = await usuarios.findByPk(req.params.id);
+
+            if (!usuario) {
+                return res.status(404).send({ mensaje: 'Usuario no encontrado' });
             }
-        })
-        .then(usuario => res.status(200).send(usuario))
-        .catch(error => res.status(400).send(error))
+
+            await usuario.update({
+                nombre: req.body.nombre,
+                direccion: req.body.direccion,
+                telefono: req.body.telefono,
+                email: req.body.email,
+                password: req.body.password,
+                rol: req.body.rol,
+                fecha_registro: req.body.fecha_registro
+            });
+
+            return res.status(200).send(usuario);
+        } catch (error) {
+            return res.status(400).send(error);
+        }
     },
-    delete (req, res) {
-        return usuario.destroy({
-            where: {
-                nombre: req.params.nombre,
+
+    async delete(req, res) {
+        try {
+            const usuario = await usuarios.findByPk(req.params.id);
+
+            if (!usuario) {
+                return res.status(404).send({ mensaje: 'Usuario no encontrado' });
             }
-        })
-        .then(usuario => res.status(200).send(usuario))
-        .catch(error => res.status(400).send(error))
-    },
+
+            await usuario.destroy();
+            return res.status(200).send({ mensaje: 'Datos eliminados correctamente' });
+        } catch (error) {
+            return res.status(400).send(error);
+        }
+    }
 };

@@ -1,53 +1,79 @@
-const Sequelize = require('sequelize');
-const carrito_detalle = require('../models/tbd_carrito_detalle');
+const db = require('../models');
+
+const carritoDetalles = db.tbb_carrito_detalles;
 
 module.exports = {
-    create (req, res) {
-        return carrito_detalle
-        .create({
-            id_carrito: req.params.id_carrito,
-            id_producto: req.params.id_producto,
-            precio_unitario: req.params.precio_unitario,
-            cantidad: req.params.cantidad
-        })
-        .then(carrito_detalle => res.status(200).send(carrito_detalle))
-        .catch(error => res.status(400).send(error))
+    async create(req, res) {
+        try {
+            const nuevoDetalle = await carritoDetalles.create({
+                id_carrito: req.body.id_carrito,
+                id_producto: req.body.id_producto,
+                precio_unitario: req.body.precio_unitario,
+                cantidad: req.body.cantidad
+            });
+
+            return res.status(201).send(nuevoDetalle);
+        } catch (error) {
+            return res.status(400).send(error);
+        }
     },
-    list (_, res) {
-        return carrito_detalle.findAll({})
-        .then(carrito_detalle => res.status(200).send(carrito_detalle))
-        .catch(error => res.status(400).send(error))
+
+    async list(_, res) {
+        try {
+            const listado = await carritoDetalles.findAll({});
+            return res.status(200).send(listado);
+        } catch (error) {
+            return res.status(400).send(error);
+        }
     },
-    find (req, res) {
-        return carrito_detalle.findAll({
-            where: {
-                id: req.params.id,
+
+    async findById(req, res) {
+        try {
+            const detalle = await carritoDetalles.findByPk(req.params.id);
+
+            if (!detalle) {
+                return res.status(404).send({ mensaje: 'Detalle de carrito no encontrado' });
             }
-        })
-        .then(carrito_detalle => res.status(200).send(carrito_detalle))
-        .catch(error => res.status(400).send(error))
+
+            return res.status(200).send(detalle);
+        } catch (error) {
+            return res.status(400).send(error);
+        }
     },
-    update (req, res) {
-        return carrito_detalle.update({
-            id_carrito: req.params.id_carrito,
-            id_producto: req.params.id_producto,
-            precio_unitario: req.params.precio_unitario,
-            cantidad: req.params.cantidad
-        }, {
-            where: {
-                id: req.params.id,
+
+    async update(req, res) {
+        try {
+            const detalle = await carritoDetalles.findByPk(req.params.id);
+
+            if (!detalle) {
+                return res.status(404).send({ mensaje: 'Detalle de carrito no encontrado' });
             }
-        })
-        .then(carrito_detalle => res.status(200).send(carrito_detalle))
-        .catch(error => res.status(400).send(error))
+
+            await detalle.update({
+                id_carrito: req.body.id_carrito,
+                id_producto: req.body.id_producto,
+                precio_unitario: req.body.precio_unitario,
+                cantidad: req.body.cantidad
+            });
+
+            return res.status(200).send(detalle);
+        } catch (error) {
+            return res.status(400).send(error);
+        }
     },
-    delete (req, res) {
-        return carrito_detalle.destroy({
-            where: {
-                id: req.params.id,
+
+    async delete(req, res) {
+        try {
+            const detalle = await carritoDetalles.findByPk(req.params.id);
+
+            if (!detalle) {
+                return res.status(404).send({ mensaje: 'Detalle de carrito no encontrado' });
             }
-        })
-        .then(carrito_detalle => res.status(200).send(carrito_detalle))
-        .catch(error => res.status(400).send(error))
-    },
+
+            await detalle.destroy();
+            return res.status(200).send({ mensaje: 'Datos eliminados correctamente' });
+        } catch (error) {
+            return res.status(400).send(error);
+        }
+    }
 };

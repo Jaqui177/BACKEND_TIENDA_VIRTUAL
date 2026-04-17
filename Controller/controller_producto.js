@@ -1,55 +1,81 @@
-const Sequelize = require('sequelize');
-const producto = require('../models/tbb_producto');
+const db = require('../models');
+
+const productos = db.tbb_productos;
 
 module.exports = {
-    create (req, res) {
-        return producto
-        .create({
-            nombre: req.params.nombre,
-            descripcion: req.params.descripcion,
-            precio: req.params.precio,
-            stock: req.params.stock,
-            id_categoria: req.params.id_categoria
-        })
-        .then(producto => res.status(200).send(producto))
-        .catch(error => res.status(400).send(error))
+    async create(req, res) {
+        try {
+            const nuevoProducto = await productos.create({
+                nombre: req.body.nombre,
+                descripcion: req.body.descripcion,
+                precio: req.body.precio,
+                stock: req.body.stock,
+                id_categoria: req.body.id_categoria
+            });
+
+            return res.status(201).send(nuevoProducto);
+        } catch (error) {
+            return res.status(400).send(error);
+        }
     },
-    list (_, res) {
-        return producto.findAll({})
-        .then(producto => res.status(200).send(producto))
-        .catch(error => res.status(400).send(error))
+
+    async list(_, res) {
+        try {
+            const listado = await productos.findAll({});
+            return res.status(200).send(listado);
+        } catch (error) {
+            return res.status(400).send(error);
+        }
     },
-    find (req, res) {
-        return producto.findAll({
-            where: {
-                nombre: req.params.nombre,
+
+    async findById(req, res) {
+        try {
+            const producto = await productos.findByPk(req.params.id);
+
+            if (!producto) {
+                return res.status(404).send({ mensaje: 'Producto no encontrado' });
             }
-        })
-        .then(producto => res.status(200).send(producto))
-        .catch(error => res.status(400).send(error))
+
+            return res.status(200).send(producto);
+        } catch (error) {
+            return res.status(400).send(error);
+        }
     },
-    update (req, res) {
-        return producto.update({
-            nombre: req.params.nombreNuevo,
-            descripcion: req.params.descripcion,
-            precio: req.params.precio,
-            stock: req.params.stock,
-            id_categoria: req.params.id_categoria
-        }, {
-            where: {
-                nombre: req.params.nombre,
+
+    async update(req, res) {
+        try {
+            const producto = await productos.findByPk(req.params.id);
+
+            if (!producto) {
+                return res.status(404).send({ mensaje: 'Producto no encontrado' });
             }
-        })
-        .then(producto => res.status(200).send(producto))
-        .catch(error => res.status(400).send(error))
+
+            await producto.update({
+                nombre: req.body.nombre,
+                descripcion: req.body.descripcion,
+                precio: req.body.precio,
+                stock: req.body.stock,
+                id_categoria: req.body.id_categoria
+            });
+
+            return res.status(200).send(producto);
+        } catch (error) {
+            return res.status(400).send(error);
+        }
     },
-    delete (req, res) {
-        return producto.destroy({
-            where: {
-                nombre: req.params.nombre,
+
+    async delete(req, res) {
+        try {
+            const producto = await productos.findByPk(req.params.id);
+
+            if (!producto) {
+                return res.status(404).send({ mensaje: 'Producto no encontrado' });
             }
-        })
-        .then(producto => res.status(200).send(producto))
-        .catch(error => res.status(400).send(error))
-    },
+
+            await producto.destroy();
+            return res.status(200).send({ mensaje: 'Datos eliminados correctamente' });
+        } catch (error) {
+            return res.status(400).send(error);
+        }
+    }
 };
