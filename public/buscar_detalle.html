@@ -1,0 +1,180 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Buscar Detalle del Carrito</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 800px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 10px;
+            padding: 20px;
+            box-shadow: 0 8px 16px rgba(0,0,0,0.1);
+        }
+
+        h1 {
+            text-align: center;
+            color: #667eea;
+            margin-bottom: 30px;
+        }
+
+        .search-form {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 20px;
+        }
+
+        input[type="number"] {
+            flex: 1;
+            padding: 10px;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+            font-size: 16px;
+        }
+
+        button {
+            padding: 10px 20px;
+            background: #667eea;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 16px;
+        }
+
+        button:hover {
+            background: #5a67d8;
+        }
+
+        .result {
+            margin-top: 20px;
+        }
+
+        .detail-card {
+            background: #f8f9fa;
+            padding: 20px;
+            border-radius: 5px;
+            border-left: 4px solid #667eea;
+        }
+
+        .detail-card h3 {
+            color: #667eea;
+            margin-bottom: 10px;
+        }
+
+        .detail-card p {
+            margin-bottom: 5px;
+        }
+
+        .price {
+            color: #27ae60;
+            font-weight: bold;
+            font-size: 1.1em;
+        }
+
+        .error {
+            color: #e74c3c;
+            background: #fadbd8;
+            padding: 10px;
+            border-radius: 5px;
+            margin-top: 20px;
+        }
+
+        .back-link {
+            display: inline-block;
+            margin-top: 20px;
+            color: #667eea;
+            text-decoration: none;
+        }
+
+        .back-link:hover {
+            text-decoration: underline;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🔍 Buscar Detalle del Carrito por ID</h1>
+
+        <div class="search-form">
+            <input type="number" id="detailId" placeholder="Ingrese el ID del detalle" min="1">
+            <button onclick="buscarDetalle()">Buscar</button>
+        </div>
+
+        <div id="result" class="result"></div>
+
+        <a href="index.html" class="back-link">← Volver al Dashboard</a>
+    </div>
+
+    <script>
+        const API = 'http://localhost:8000/api';
+
+        async function buscarDetalle() {
+            const id = document.getElementById('detailId').value;
+            const resultDiv = document.getElementById('result');
+
+            if (!id) {
+                resultDiv.innerHTML = '<div class="error">Por favor ingrese un ID válido</div>';
+                return;
+            }
+
+            try {
+                const response = await fetch(`${API}/carrito-detalles/${id}`);
+                const detalle = await response.json();
+
+                if (response.status === 404) {
+                    resultDiv.innerHTML = '<div class="error">Detalle no encontrado</div>';
+                    return;
+                }
+
+                if (!response.ok) {
+                    throw new Error('Error en la búsqueda');
+                }
+
+                resultDiv.innerHTML = `
+                    <div class="detail-card">
+                        <h3>Detalle #${detalle.id}</h3>
+                        <p><strong>ID:</strong> ${detalle.id}</p>
+                        <p><strong>Carrito ID:</strong> ${detalle.id_carrito}</p>
+                        <p><strong>Producto ID:</strong> ${detalle.id_producto}</p>
+                        <p><strong>Cantidad:</strong> ${detalle.cantidad}</p>
+                        <p><strong>Precio Unitario:</strong> <span class="price">$${detalle.precio_unitario}</span></p>
+                    </div>
+                `;
+            } catch (error) {
+                resultDiv.innerHTML = `<div class="error">Error: ${error.message}</div>`;
+            }
+        }
+
+        // Buscar automáticamente si hay un ID en la URL
+        const urlParams = new URLSearchParams(window.location.search);
+        const idParam = urlParams.get('id');
+        if (idParam) {
+            document.getElementById('detailId').value = idParam;
+            buscarDetalle();
+        }
+
+        // Permitir búsqueda con Enter
+        document.getElementById('detailId').addEventListener('keypress', function(e) {
+            if (e.key === 'Enter') {
+                buscarDetalle();
+            }
+        });
+    </script>
+</body>
+</html>

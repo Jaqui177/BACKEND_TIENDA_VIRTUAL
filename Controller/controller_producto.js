@@ -42,6 +42,34 @@ module.exports = {
         }
     },
 
+    async findByNombre(req, res) {
+        try {
+            const producto = await productos.findOne({
+                where: { nombre: req.params.nombre }
+            });
+
+            if (!producto) {
+                return res.status(404).send({ mensaje: 'Producto no encontrado' });
+            }
+
+            return res.status(200).send(producto);
+        } catch (error) {
+            return res.status(400).send(error);
+        }
+    },
+
+    async findByCategoriaId(req, res) {
+        try {
+            const productosList = await productos.findAll({
+                where: { id_categoria: req.params.id_categoria }
+            });
+
+            return res.status(200).send(productosList);
+        } catch (error) {
+            return res.status(400).send(error);
+        }
+    },
+
     async update(req, res) {
         try {
             const producto = await productos.findByPk(req.params.id);

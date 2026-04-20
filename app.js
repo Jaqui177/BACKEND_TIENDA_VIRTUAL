@@ -6,6 +6,9 @@ const bodyParser = require('body-parser');
 const http = require('http');
 const app = express();
 
+// Servir archivos estáticos desde la carpeta public
+app.use(express.static('public'));
+
 app.use(logger('dev'));
 app.use(bodyParser.json());
 app.use(bodyParser.urlencoded({extended: false}));
@@ -14,6 +17,7 @@ app.get('/', (req, res)=> res.status(200).send({
     message: 'Bienvenido a mi api de tienda virtual',
 }));
 
+require('./routes/route_login')(app);
 require('./routes/route_categorias')(app);
 require('./routes/route_usuarios')(app);
 require('./routes/route_productos')(app);

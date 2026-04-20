@@ -41,6 +41,18 @@ module.exports = {
         }
     },
 
+    async findByCarritoId(req, res) {
+        try {
+            const detalles = await carritoDetalles.findAll({
+                where: { id_carrito: req.params.id_carrito }
+            });
+
+            return res.status(200).send(detalles);
+        } catch (error) {
+            return res.status(400).send(error);
+        }
+    },
+
     async update(req, res) {
         try {
             const detalle = await carritoDetalles.findByPk(req.params.id);

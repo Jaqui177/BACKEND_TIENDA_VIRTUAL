@@ -1,0 +1,228 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Buscar Carrito</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 800px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 10px;
+            padding: 20px;
+            box-shadow: 0 8px 16px rgba(0,0,0,0.1);
+        }
+
+        h1 {
+            text-align: center;
+            color: #667eea;
+            margin-bottom: 30px;
+        }
+
+        .search-form {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 20px;
+        }
+
+        input[type="number"] {
+            flex: 1;
+            padding: 10px;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+            font-size: 16px;
+        }
+
+        button {
+            padding: 10px 20px;
+            background: #667eea;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 16px;
+        }
+
+        button:hover {
+            background: #5a67d8;
+        }
+
+        .result {
+            margin-top: 20px;
+        }
+
+        .cart-card {
+            background: #f8f9fa;
+            padding: 20px;
+            border-radius: 5px;
+            border-left: 4px solid #667eea;
+        }
+
+        .cart-card h3 {
+            color: #667eea;
+            margin-bottom: 10px;
+        }
+
+        .cart-card p {
+            margin-bottom: 5px;
+        }
+
+        .price {
+            color: #27ae60;
+            font-weight: bold;
+            font-size: 1.1em;
+        }
+
+        .error {
+            color: #e74c3c;
+            background: #fadbd8;
+            padding: 10px;
+            border-radius: 5px;
+            margin-top: 20px;
+        }
+
+        .back-link {
+            display: inline-block;
+            margin-top: 20px;
+            color: #667eea;
+            text-decoration: none;
+        }
+
+        .cart-details {
+            margin-top: 20px;
+        }
+
+        .cart-details h4 {
+            color: #667eea;
+            margin-bottom: 10px;
+        }
+
+        .detail-item {
+            background: #fff;
+            padding: 10px;
+            margin-bottom: 10px;
+            border-radius: 5px;
+            border-left: 3px solid #667eea;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🔍 Buscar Carrito por ID</h1>
+
+        <div class="search-form">
+            <input type="number" id="cartId" placeholder="Ingrese el ID del carrito" min="1">
+            <button onclick="buscarCarrito()">Buscar</button>
+        </div>
+
+        <div id="result" class="result"></div>
+
+        <a href="index.html" class="back-link">← Volver al Dashboard</a>
+    </div>
+
+    <script>
+        const API = 'http://localhost:8000/api';
+
+        async function buscarCarrito() {
+            const id = document.getElementById('cartId').value;
+            const resultDiv = document.getElementById('result');
+
+            if (!id) {
+                resultDiv.innerHTML = '<div class="error">Por favor ingrese un ID válido</div>';
+                return;
+            }
+
+            try {
+                const response = await fetch(`${API}/carritos/${id}`);
+                const carrito = await response.json();
+
+                if (response.status === 404) {
+                    resultDiv.innerHTML = '<div class="error">Carrito no encontrado</div>';
+                    return;
+                }
+
+                if (!response.ok) {
+                    throw new Error('Error en la búsqueda');
+                }
+
+                resultDiv.innerHTML = `
+                    <div class="cart-card">
+                        <h3>Carrito #${carrito.id_carrito}</h3>
+                        <p><strong>ID:</strong> ${carrito.id_carrito}</p>
+                        <p><strong>Usuario ID:</strong> ${carrito.id_usuario}</p>
+                        <p><strong>Total:</strong> <span class="price">$${carrito.total}</span></p>
+                        <p><strong>Fecha de Creación:</strong> ${new Date(carrito.fecha_creacion).toLocaleDateString()}</p>
+                    </div>
+                    <div class="cart-details">
+                        <h4>Productos en el Carrito:</h4>
+                        <div id="detalles-container">Cargando detalles...</div>
+                    </div>
+                `;
+
+                // Cargar detalles del carrito
+                cargarDetallesCarrito(carrito.id_carrito);
+            } catch (error) {
+                resultDiv.innerHTML = `<div class="error">Error: ${error.message}</div>`;
+            }
+        }
+
+        // Buscar automáticamente si hay un ID en la URL
+        const urlParams = new URLSearchParams(window.location.search);
+        const idParam = urlParams.get('id');
+        if (idParam) {
+            document.getElementById('cartId').value = idParam;
+            buscarCarrito();
+        }
+
+        // Permitir búsqueda con Enter
+        document.getElementById('cartId').addEventListener('keypress', function(e) {
+            if (e.key === 'Enter') {
+                buscarCarrito();
+            }
+        });
+
+        async function cargarDetallesCarrito(idCarrito) {
+            try {
+                const response = await fetch(`${API}/carrito-detalles/carrito/${idCarrito}`);
+                const detalles = await response.json();
+
+                const container = document.getElementById('detalles-container');
+
+                if (!Array.isArray(detalles) || detalles.length === 0) {
+                    container.innerHTML = '<p>No hay productos en este carrito</p>';
+                    return;
+                }
+
+                let html = '';
+                detalles.forEach(d => {
+                    html += `
+                        <div class="detail-item">
+                            <p><strong>Producto ID:</strong> ${d.id_producto}</p>
+                            <p><strong>Cantidad:</strong> ${d.cantidad}</p>
+                            <p><strong>Precio Unitario:</strong> <span class="price">$${d.precio_unitario}</span></p>
+                            <p><strong>Subtotal:</strong> <span class="price">$${(d.cantidad * d.precio_unitario).toFixed(2)}</span></p>
+                        </div>
+                    `;
+                });
+                container.innerHTML = html;
+            } catch (error) {
+                document.getElementById('detalles-container').innerHTML = `<div class="error">Error cargando detalles: ${error.message}</div>`;
+            }
+        }
+    </script>
+</body>
+</html>

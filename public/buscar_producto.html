@@ -1,0 +1,346 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Buscar Producto</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 800px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 10px;
+            padding: 20px;
+            box-shadow: 0 8px 16px rgba(0,0,0,0.1);
+        }
+
+        h1 {
+            text-align: center;
+            color: #667eea;
+            margin-bottom: 30px;
+        }
+
+        .search-form {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 20px;
+            align-items: center;
+        }
+
+        select {
+            padding: 10px;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+            font-size: 16px;
+        }
+
+        input[type="number"] {
+            flex: 1;
+            padding: 10px;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+            font-size: 16px;
+        }
+
+        button {
+            padding: 10px 20px;
+            background: #667eea;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 16px;
+        }
+
+        button:hover {
+            background: #5a67d8;
+        }
+
+        .result {
+            margin-top: 20px;
+        }
+
+        .product-card {
+            background: #f8f9fa;
+            padding: 20px;
+            border-radius: 5px;
+            border-left: 4px solid #667eea;
+        }
+
+        .product-card h3 {
+            color: #667eea;
+            margin-bottom: 10px;
+        }
+
+        .product-card p {
+            margin-bottom: 5px;
+        }
+
+        .price {
+            color: #27ae60;
+            font-weight: bold;
+            font-size: 1.1em;
+        }
+
+        .stock {
+            color: #2980b9;
+            font-weight: bold;
+        }
+
+        .error {
+            color: #e74c3c;
+            background: #fadbd8;
+            padding: 10px;
+            border-radius: 5px;
+            margin-top: 20px;
+        }
+
+        .back-link {
+            display: inline-block;
+            margin-top: 20px;
+            color: #667eea;
+            text-decoration: none;
+        }
+
+        .back-link:hover {
+            text-decoration: underline;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🔍 Buscar Producto</h1>
+
+        <div class="search-form">
+            <select id="searchType" onchange="cambiarTipoBusqueda()">
+                <option value="id">Buscar por ID</option>
+                <option value="nombre">Buscar por Nombre</option>
+                <option value="categoria">Buscar por Categoría ID</option>
+            </select>
+            <div id="inputContainer">
+                <input type="text" id="searchValue" placeholder="Ingrese el valor a buscar">
+            </div>
+            <button onclick="buscarProducto()">Buscar</button>
+        </div>
+
+        <div id="result" class="result"></div>
+
+        <a href="index.html" class="back-link">← Volver al Dashboard</a>
+    </div>
+
+    <script>
+        const API = 'http://localhost:8000/api';
+
+        let productos = []; // Almacenar la lista de productos
+
+        // Cargar productos al iniciar la página
+        window.onload = function() {
+            cargarProductos();
+        };
+
+        async function cargarProductos() {
+            try {
+                const response = await fetch(`${API}/productos`);
+                productos = await response.json();
+                cambiarTipoBusqueda(); // Actualizar el input/select después de cargar
+            } catch (error) {
+                console.error('Error cargando productos:', error);
+            }
+        }
+
+        function cambiarTipoBusqueda() {
+            const searchType = document.getElementById('searchType').value;
+            const inputContainer = document.getElementById('inputContainer');
+
+            if (searchType === 'id' && productos.length > 0) {
+                // Crear select con productos
+                let selectHtml = '<select id="searchValue" onchange="buscarProductoSeleccionado(this.value)">';
+                selectHtml += '<option value="">Selecciona un producto</option>';
+                productos.forEach(p => {
+                    selectHtml += `<option value="${p.id}">${p.id} - ${p.nombre}</option>`;
+                });
+                selectHtml += '</select>';
+                inputContainer.innerHTML = selectHtml;
+            } else {
+                // Input normal
+                let placeholder = '';
+                if (searchType === 'id') placeholder = 'Ingrese el ID del producto';
+                else if (searchType === 'nombre') placeholder = 'Ingrese el nombre del producto';
+                else if (searchType === 'categoria') placeholder = 'Ingrese el ID de la categoría';
+                
+                inputContainer.innerHTML = `<input type="text" id="searchValue" placeholder="${placeholder}">`;
+                
+                // Re-agregar el event listener para Enter
+                setTimeout(() => {
+                    document.getElementById('searchValue').addEventListener('keypress', function(e) {
+                        if (e.key === 'Enter') {
+                            buscarProducto();
+                        }
+                    });
+                }, 100);
+            }
+        }
+
+        function buscarProductoSeleccionado(id) {
+            if (id) {
+                document.getElementById('searchType').value = 'id';
+                buscarProductoPorId(id);
+            }
+        }
+
+        async function buscarProducto() {
+            const searchType = document.getElementById('searchType').value;
+            const searchValue = document.getElementById('searchValue').value;
+            const resultDiv = document.getElementById('result');
+
+            if (!searchValue) {
+                resultDiv.innerHTML = '<div class="error">Por favor selecciona o ingresa un valor a buscar</div>';
+                return;
+            }
+
+            try {
+                let url;
+                switch (searchType) {
+                    case 'id':
+                        url = `${API}/productos/${searchValue}`;
+                        break;
+                    case 'nombre':
+                        url = `${API}/productos/nombre/${encodeURIComponent(searchValue)}`;
+                        break;
+                    case 'categoria':
+                        if (isNaN(searchValue)) {
+                            resultDiv.innerHTML = '<div class="error">El ID de categoría debe ser un número</div>';
+                            return;
+                        }
+                        url = `${API}/productos/categoria/${searchValue}`;
+                        break;
+                }
+
+                const response = await fetch(url);
+                const data = await response.json();
+
+                if (response.status === 404) {
+                    resultDiv.innerHTML = '<div class="error">Producto(s) no encontrado(s)</div>';
+                    return;
+                }
+
+                if (!response.ok) {
+                    throw new Error('Error en la búsqueda');
+                }
+
+                // Si es búsqueda por categoría, mostrar lista de productos
+                if (searchType === 'categoria') {
+                    if (!Array.isArray(data) || data.length === 0) {
+                        resultDiv.innerHTML = '<div class="error">No hay productos en esta categoría</div>';
+                        return;
+                    }
+
+                    let html = '<h3>Productos en la Categoría:</h3>';
+                    data.forEach(p => {
+                        html += `
+                            <div class="product-card">
+                                <h4>${p.nombre}</h4>
+                                <p><strong>ID:</strong> ${p.id}</p>
+                                <p><strong>Descripción:</strong> ${p.descripcion}</p>
+                                <p><strong>Precio:</strong> <span class="price">$${p.precio}</span></p>
+                                <p><strong>Stock:</strong> <span class="stock">${p.stock}</span></p>
+                                <p><strong>Categoría ID:</strong> ${p.id_categoria}</p>
+                            </div>
+                        `;
+                    });
+                    resultDiv.innerHTML = html;
+                } else {
+                    // Búsqueda por ID o nombre (un solo producto)
+                    resultDiv.innerHTML = `
+                        <div class="product-card">
+                            <h3>${data.nombre}</h3>
+                            <p><strong>ID:</strong> ${data.id}</p>
+                            <p><strong>Descripción:</strong> ${data.descripcion}</p>
+                            <p><strong>Precio:</strong> <span class="price">$${data.precio}</span></p>
+                            <p><strong>Stock:</strong> <span class="stock">${data.stock}</span></p>
+                            <p><strong>Categoría ID:</strong> ${data.id_categoria}</p>
+                        </div>
+                    `;
+                }
+            } catch (error) {
+                resultDiv.innerHTML = `<div class="error">Error: ${error.message}</div>`;
+            }
+        }
+
+        async function buscarProductoPorId(id) {
+            const resultDiv = document.getElementById('result');
+            try {
+                const response = await fetch(`${API}/productos/${id}`);
+                const producto = await response.json();
+
+                if (response.status === 404) {
+                    resultDiv.innerHTML = '<div class="error">Producto no encontrado</div>';
+                    return;
+                }
+
+                if (!response.ok) {
+                    throw new Error('Error en la búsqueda');
+                }
+
+                resultDiv.innerHTML = `
+                    <div class="product-card">
+                        <h3>${producto.nombre}</h3>
+                        <p><strong>ID:</strong> ${producto.id}</p>
+                        <p><strong>Descripción:</strong> ${producto.descripcion}</p>
+                        <p><strong>Precio:</strong> <span class="price">$${producto.precio}</span></p>
+                        <p><strong>Stock:</strong> <span class="stock">${producto.stock}</span></p>
+                        <p><strong>Categoría ID:</strong> ${producto.id_categoria}</p>
+                    </div>
+                `;
+            } catch (error) {
+                resultDiv.innerHTML = `<div class="error">Error: ${error.message}</div>`;
+            }
+        }
+
+        // Buscar automáticamente si hay parámetros en la URL
+        // Esto se ejecuta después de cargar productos
+        setTimeout(() => {
+            const urlParams = new URLSearchParams(window.location.search);
+            const idParam = urlParams.get('id');
+            const nombreParam = urlParams.get('nombre');
+            const categoriaParam = urlParams.get('categoria');
+
+            if (idParam) {
+                document.getElementById('searchType').value = 'id';
+                cambiarTipoBusqueda();
+                setTimeout(() => {
+                    document.getElementById('searchValue').value = idParam;
+                    buscarProducto();
+                }, 200);
+            } else if (nombreParam) {
+                document.getElementById('searchType').value = 'nombre';
+                cambiarTipoBusqueda();
+                setTimeout(() => {
+                    document.getElementById('searchValue').value = nombreParam;
+                    buscarProducto();
+                }, 200);
+            } else if (categoriaParam) {
+                document.getElementById('searchType').value = 'categoria';
+                cambiarTipoBusqueda();
+                setTimeout(() => {
+                    document.getElementById('searchValue').value = categoriaParam;
+                    buscarProducto();
+                }, 200);
+            }
+        }, 500);
+    </script>
+</body>
+</html>

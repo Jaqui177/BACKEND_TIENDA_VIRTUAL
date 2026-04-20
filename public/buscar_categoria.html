@@ -1,0 +1,170 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Buscar Categoría</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 800px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 10px;
+            padding: 20px;
+            box-shadow: 0 8px 16px rgba(0,0,0,0.1);
+        }
+
+        h1 {
+            text-align: center;
+            color: #667eea;
+            margin-bottom: 30px;
+        }
+
+        .search-form {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 20px;
+        }
+
+        input[type="number"] {
+            flex: 1;
+            padding: 10px;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+            font-size: 16px;
+        }
+
+        button {
+            padding: 10px 20px;
+            background: #667eea;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 16px;
+        }
+
+        button:hover {
+            background: #5a67d8;
+        }
+
+        .result {
+            margin-top: 20px;
+        }
+
+        .category-card {
+            background: #f8f9fa;
+            padding: 20px;
+            border-radius: 5px;
+            border-left: 4px solid #667eea;
+        }
+
+        .category-card h3 {
+            color: #667eea;
+            margin-bottom: 10px;
+        }
+
+        .category-card p {
+            margin-bottom: 5px;
+        }
+
+        .error {
+            color: #e74c3c;
+            background: #fadbd8;
+            padding: 10px;
+            border-radius: 5px;
+            margin-top: 20px;
+        }
+
+        .back-link {
+            display: inline-block;
+            margin-top: 20px;
+            color: #667eea;
+            text-decoration: none;
+        }
+
+        .back-link:hover {
+            text-decoration: underline;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🔍 Buscar Categoría por ID</h1>
+
+        <div class="search-form">
+            <input type="number" id="categoryId" placeholder="Ingrese el ID de la categoría" min="1">
+            <button onclick="buscarCategoria()">Buscar</button>
+        </div>
+
+        <div id="result" class="result"></div>
+
+        <a href="index.html" class="back-link">← Volver al Dashboard</a>
+    </div>
+
+    <script>
+        const API = 'http://localhost:8000/api';
+
+        async function buscarCategoria() {
+            const id = document.getElementById('categoryId').value;
+            const resultDiv = document.getElementById('result');
+
+            if (!id) {
+                resultDiv.innerHTML = '<div class="error">Por favor ingrese un ID válido</div>';
+                return;
+            }
+
+            try {
+                const response = await fetch(`${API}/categorias/${id}`);
+                const categoria = await response.json();
+
+                if (response.status === 404) {
+                    resultDiv.innerHTML = '<div class="error">Categoría no encontrada</div>';
+                    return;
+                }
+
+                if (!response.ok) {
+                    throw new Error('Error en la búsqueda');
+                }
+
+                resultDiv.innerHTML = `
+                    <div class="category-card">
+                        <h3>${categoria.nombre}</h3>
+                        <p><strong>ID:</strong> ${categoria.id_categoria}</p>
+                    </div>
+                `;
+            } catch (error) {
+                resultDiv.innerHTML = `<div class="error">Error: ${error.message}</div>`;
+            }
+        }
+
+        // Buscar automáticamente si hay un ID en la URL
+        const urlParams = new URLSearchParams(window.location.search);
+        const idParam = urlParams.get('id');
+        if (idParam) {
+            document.getElementById('categoryId').value = idParam;
+            buscarCategoria();
+        }
+
+        // Permitir búsqueda con Enter
+        document.getElementById('categoryId').addEventListener('keypress', function(e) {
+            if (e.key === 'Enter') {
+                buscarCategoria();
+            }
+        });
+    </script>
+</body>
+</html>

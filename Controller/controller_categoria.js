@@ -1,47 +1,75 @@
-const Sequelize = require('sequelize');
-const categoria = require('../models/tbc_categoria');
+const db = require('../models');
+const categorias = db.tbc_categorias;
 
 module.exports = {
-    create (req, res) {
-        return categoria
-        .create({
-            nombre: req.params.nombre
-        })
-        .then(categoria => res.status(200).send(categoria))
-        .catch(error => res.status(400).send(error))
+    async create (req, res) {
+        try {
+            const nuevaCategoria = await categorias.create({
+                nombre: req.body.nombre
+            });
+            return res.status(201).send(nuevaCategoria);
+        } catch (error) {
+            return res.status(400).send(error);
+        }
     },
-    list (_, res) {
-        return categoria.findAll({})
-        .then(categoria => res.status(200).send(categoria))
-        .catch(error => res.status(400).send(error))
+    
+    async list (_, res) {
+        try {
+            const listado = await categorias.findAll({});
+            return res.status(200).send(listado);
+        } catch (error) {
+            return res.status(400).send(error);
+        }
     },
-    find (req, res) {
-        return categoria.findAll({
-            where: {
-                nombre: req.params.nombre,
+
+    async findByNombre (req, res) {
+        try {
+            const resultado = await categorias.findAll({
+                where: { nombre: req.params.nombre }
+            });
+            return res.status(200).send(resultado);
+        } catch (error) {
+            return res.status(400).send(error);
+        }
+    },
+
+    async findById (req, res) {
+        try {
+            const categoria = await categorias.findByPk(req.params.id);
+            if (!categoria) {
+                return res.status(404).send({ mensaje: 'Categoría no encontrada' });
             }
-        })
-        .then(categoria => res.status(200).send(categoria))
-        .catch(error => res.status(400).send(error))
+            return res.status(200).send(categoria);
+        } catch (error) {
+            return res.status(400).send(error);
+        }
     },
-    update (req, res) {
-        return categoria.update({
-            nombre: req.params.nombreNuevo
-        }, {
-            where: {
-                nombre: req.params.nombre,
+
+    async update (req, res) {
+        try {
+            const categoria = await categorias.findByPk(req.params.id);
+            if (!categoria) {
+                return res.status(404).send({ mensaje: 'Categoría no encontrada' });
             }
-        })
-        .then(categoria => res.status(200).send(categoria))
-        .catch(error => res.status(400).send(error))
+            await categoria.update({
+                nombre: req.body.nombre
+            });
+            return res.status(200).send(categoria);
+        } catch (error) {
+            return res.status(400).send(error);
+        }
     },
-    delete (req, res) {
-        return categoria.destroy({
-            where: {
-                nombre: req.params.nombre,
+
+    async delete (req, res) {
+        try {
+            const categoria = await categorias.findByPk(req.params.id);
+            if (!categoria) {
+                return res.status(404).send({ mensaje: 'Categoría no encontrada' });
             }
-        })
-        .then(categoria => res.status(200).send(categoria))
-        .catch(error => res.status(400).send(error))
-    },
+            await categoria.destroy();
+            return res.status(200).send({ mensaje: 'Datos eliminados correctamente' });
+        } catch (error) {
+            return res.status(400).send(error);
+        }
+    }
 };
